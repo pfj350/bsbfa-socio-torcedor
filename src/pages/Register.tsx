@@ -84,12 +84,60 @@ export default function Register() {
     if (signUpError) {
       setError(signUpError.message);
       setLoading(false);
-    } else {
+      return;
+    }
+
+    if (data.user) {
+      // 1. Busca a contagem atual para gerar o ID sequencial BFA-01, BFA-02...
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      const nextNumber = (count || 0) + 1;
+      const memberId = `BFA-${nextNumber.toString().padStart(2, '0')}`;
+
+      // 2. Tenta criar o perfil
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([{
+          id: data.user.id,
+          full_name: formData.fullName,
+          email: formData.email,
+          cpf: formData.cpf,
+          phone: formData.phone,
+          birth_date: formData.birthDate,
+          avatar_url: formData.avatarUrl,
+          role: 'user',
+          status: 'active',
+          points: 0,
+          level: 'NOVATO',
+          member_id: memberId
+        }]);
+
+      if (profileError) {
+        console.error('ERRO CRÍTICO NO PERFIL:', profileError);
+        
+        // Trata erro de CPF duplicado
+        if (profileError.code === '23505' && profileError.message.includes('cpf')) {
+          setError('Este CPF já está cadastrado em outra conta.');
+        } else {
+          setError(`Erro no banco: ${profileError.message}`);
+        }
+        
+        setLoading(false);
+        return;
+      }
+
       setSuccess(true);
       setLoading(false);
+      
       setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+        if (data.session) {
+          navigate('/');
+        } else {
+          navigate('/login');
+        }
+      }, 1500);
     }
   };
 
@@ -101,11 +149,16 @@ export default function Register() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-dark-surface/50 p-8 rounded-3xl border border-neon-green/30 text-center max-w-md"
         >
-          <div className="w-16 h-16 bg-neon-green/20 text-neon-green rounded-full flex items-center justify-center mx-auto mb-4">
-            <User size={32} />
+          <div className="relative mb-6">
+            <div className="w-20 h-20 bg-neon-green/20 text-neon-green rounded-full flex items-center justify-center mx-auto animate-bounce">
+              <Check size={40} strokeWidth={3} />
+            </div>
+            <div className="absolute inset-0 bg-neon-green/10 blur-2xl rounded-full" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Cadastro Realizado!</h2>
-          <p className="text-gray-400">Verifique seu email para confirmar o cadastro e/ou faça login.</p>
+          <h2 className="text-3xl font-black italic uppercase text-white mb-2 tracking-tight">
+            CADASTRO <span className="text-neon-green">CONCLUÍDO!</span>
+          </h2>
+          <p className="text-gray-400 font-medium">Bem-vindo à tropa! Estamos preparando seu acesso...</p>
         </motion.div>
       </div>
     );

@@ -26,7 +26,7 @@ export const NAV_ITEMS = [
 
 export const MOCK_USER = {
   name: 'Aloysio',
-  type: 'Sócio Premium',
+  type: 'Sócio Torcedor',
   level: 'MVP',
   points: 2450,
   avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop',
@@ -99,7 +99,7 @@ export const PRODUCTS = [
   },
   {
     id: 3,
-    name: 'Kit Torcedor Premium',
+    name: 'Kit Sócio Torcedor',
     price: 199.90,
     image: 'https://images.unsplash.com/photo-1556906781-9a412961d28c?w=400&h=400&fit=crop',
     exclusive: true

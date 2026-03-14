@@ -17,6 +17,8 @@ import Guides from '@/pages/Guides';
 
 import Admin from '@/pages/admin/Admin';
 import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 
 function ProtectedRoute({ children, reqAdmin = false }: { children: React.ReactNode, reqAdmin?: boolean }) {
   const { isAuthenticated, isLoading, profile } = useAuth();
@@ -57,6 +59,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/benefits" element={<ProtectedRoute><Benefits /></ProtectedRoute>} />

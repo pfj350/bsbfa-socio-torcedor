@@ -51,7 +51,7 @@ export default function Login() {
           <div className="flex justify-center mb-6">
             <img src="/logo-socio.png" alt="Brasília FA Sócio Torcedor" className="h-28 object-contain filter drop-shadow-[0_0_30px_rgba(14,144,31,0.3)]" />
           </div>
-          <p className="text-gray-400 mt-2">Área exclusiva do Sócio Premium</p>
+          <p className="text-gray-400 mt-2">Área exclusiva do Sócio Torcedor Brasília Futebol Americano</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-dark-surface/50 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl">
@@ -102,16 +102,16 @@ export default function Login() {
           </button>
 
           <div className="text-center">
-            <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
+            <Link to="/forgot-password" className="text-sm text-gray-400 hover:text-white transition-colors">
               Esqueceu sua senha?
-            </a>
+            </Link>
           </div>
         </form>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-500 text-sm">Ainda não tem conta?</p>
+          <p className="text-gray-500 text-sm">Quer saber como entrar?</p>
           <Link to="/register" className="text-neon-green font-bold hover:underline mt-1 inline-block">
-            CRIE SUA CONTA!
+            VEJA AGORA!
           </Link>
         </div>
       </motion.div>
