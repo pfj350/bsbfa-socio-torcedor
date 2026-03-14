@@ -8,8 +8,39 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getPublishBadge } from '@/lib/utils';
 
 export default function Dashboard() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, isLoading } = useAuth();
   const x = useMotionValue(0);
+
+  // Componente de Skeleton para a carteirinha
+  const CardSkeleton = () => (
+    <div className="relative w-full max-w-2xl aspect-[1.586/1] rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.3)] border border-white/5 bg-[#18181B] animate-pulse">
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+      <div className="relative p-6 md:p-8 h-full flex flex-col justify-between">
+        <div className="flex justify-between items-start">
+          <div className="h-8 w-48 bg-white/10 rounded-lg"></div>
+          <div className="h-12 w-12 bg-white/10 rounded-full"></div>
+        </div>
+        <div className="flex gap-4 md:gap-8 items-end flex-1 mt-4">
+          <div className="w-24 h-32 md:w-32 md:h-[180px] bg-white/10 rounded-xl shrink-0"></div>
+          <div className="flex-1 space-y-4">
+            <div className="h-10 w-3/4 bg-white/10 rounded-lg"></div>
+            <div className="h-2 w-16 bg-neon-green/30 rounded"></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="h-3 w-12 bg-white/5 rounded"></div>
+                <div className="h-4 w-16 bg-white/10 rounded"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 w-12 bg-white/5 rounded"></div>
+                <div className="h-4 w-16 bg-white/10 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const y = useMotionValue(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -49,7 +80,6 @@ export default function Dashboard() {
     const diffTime = Math.abs(now.getTime() - startDate.getTime());
     const daysActive = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     
-    // Total journey progress (100% = 365 days / 12 months)
     const totalProgress = Math.min((daysActive / 365) * 100, 100);
 
     let level = 'Novato';
@@ -162,7 +192,6 @@ export default function Dashboard() {
     x.set(xPct);
     y.set(yPct);
   };
-
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col items-center w-full space-y-4">
@@ -171,56 +200,58 @@ export default function Dashboard() {
         <div className="w-full flex justify-center py-4 relative" style={{ perspective: 1200 }}>
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 w-full max-w-xl mx-auto h-[90%] bg-[#0B3A1C] opacity-70 rounded-full blur-[80px] pointer-events-none" />
           
-          <motion.div 
-            onMouseMove={handleMouseMove}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative w-full max-w-2xl aspect-[1.586/1] rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.3)] border border-neon-green/30 group bg-white cursor-none z-10"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-[#f2faf3] via-[#e5f5e8] to-[#d0ecdb] opacity-100 pointer-events-none" />
-            <div className="absolute inset-0 opacity-[0.4] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/clean-gray-paper.png')]" />
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.28]" style={{ transform: 'translateZ(5px) scale(0.95)' }}>
-              <img src="/logo-socio.png" alt="Marcad'água" className="w-[85%] max-w-md object-contain" />
-            </div>
-            
-            <div className="relative p-6 md:p-8 h-full flex flex-col justify-between" style={{ transform: "translateZ(30px)" }}>
-              <div className="flex justify-between items-start">
-                 <div className="flex items-center gap-3">
-                   <h3 className="text-[#0B3A1C] font-black tracking-tighter italic uppercase text-2xl md:text-3xl drop-shadow-sm leading-none">Sócio Torcedor</h3>
-                 </div>
-                 <div className="flex items-center gap-4">
-                   <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-3 bg-[#0B3A1C]/5 rounded-xl hover:bg-[#0B3A1C]/15 text-[#0B3A1C]/80 transition-colors shadow-sm"><Settings size={20} /></button>
-                   <img src="/logo-socio.png" alt="Sócio" className="h-10 md:h-14 object-contain" />
-                 </div>
+          {(isLoading || !profile) ? (
+            <CardSkeleton />
+          ) : (
+            <motion.div 
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative w-full max-w-2xl aspect-[1.586/1] rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.3)] border border-neon-green/30 group bg-white cursor-none z-10"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-[#f2faf3] via-[#e5f5e8] to-[#d0ecdb] opacity-100 pointer-events-none" />
+              <div className="absolute inset-0 opacity-[0.4] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/clean-gray-paper.png')]" />
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.28]" style={{ transform: 'translateZ(5px) scale(0.95)' }}>
+                <img src="/logo-socio.png" alt="Marcad'água" className="w-[85%] max-w-md object-contain" />
               </div>
-
-              <div className="flex gap-4 md:gap-8 items-end flex-1 mt-4">
-                <div className="w-24 h-32 md:w-32 md:h-[180px] bg-white border-[3px] border-[#0B3A1C]/30 rounded-lg md:rounded-xl overflow-hidden shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.1)] relative group-hover:border-neon-green/60 transition-colors duration-500">
-                  <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'User'}`} className="w-full h-full object-cover filter contrast-110" />
+              
+              <div className="relative p-6 md:p-8 h-full flex flex-col justify-between" style={{ transform: "translateZ(30px)" }}>
+                <div className="flex justify-between items-start">
+                   <div className="flex items-center gap-3">
+                     <h3 className="text-[#0B3A1C] font-black tracking-tighter italic uppercase text-2xl md:text-3xl drop-shadow-sm leading-none">Sócio Torcedor</h3>
+                   </div>
+                   <div className="flex items-center gap-4">
+                     <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-3 bg-[#0B3A1C]/5 rounded-xl hover:bg-[#0B3A1C]/15 text-[#0B3A1C]/80 transition-colors shadow-sm"><Settings size={20} /></button>
+                     <img src="/logo-socio.png" alt="Sócio" className="h-10 md:h-14 object-contain" />
+                   </div>
                 </div>
-                
-                <div className="flex-1 w-full relative pb-2 text-[#0B3A1C]">
-                  <h2 className="text-2xl md:text-4xl font-black italic uppercase text-[#0B3A1C] tracking-tight mb-0 leading-none truncate max-w-[280px] md:max-w-md">
-                    {profile?.full_name 
-                      ? (profile.full_name.length > 16 ? profile.full_name.slice(0, 16) : profile.full_name) 
-                      : 'CARREGANDO...'}
-                  </h2>
-                  <div className="h-1 w-16 bg-neon-green rounded mt-2 mb-4"></div>
+
+                <div className="flex gap-4 md:gap-8 items-end flex-1 mt-4">
+                  <div className="w-24 h-32 md:w-32 md:h-[180px] bg-white border-[3px] border-[#0B3A1C]/30 rounded-lg md:rounded-xl overflow-hidden shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.1)] relative group-hover:border-neon-green/60 transition-colors duration-500">
+                    <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'User'}`} className="w-full h-full object-cover filter contrast-110" />
+                  </div>
                   
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4 text-[10px] md:text-xs font-mono leading-tight">
-                    <div><p className="opacity-60 mb-0.5">STATUS</p><p className="font-bold">ATIVO</p></div>
-                    <div><p className="opacity-60 mb-0.5">NÍVEL</p><p className="font-bold">{memberData.level.toUpperCase()}</p></div>
-                    <div><p className="opacity-60 mb-0.5">VALIDADE</p><p className="font-bold">{validityDate}</p></div>
-                    <div><p className="opacity-60 mb-0.5">REGISTRO</p><p className="font-bold">{profile?.member_id?.slice(-8) || '---'}</p></div>
+                  <div className="flex-1 w-full relative pb-2 text-[#0B3A1C]">
+                    <h2 className="text-2xl md:text-4xl font-black italic uppercase text-[#0B3A1C] tracking-tight mb-0 leading-none truncate max-w-[280px] md:max-w-md">
+                      {profile?.full_name}
+                    </h2>
+                    <div className="h-1 w-16 bg-neon-green rounded mt-2 mb-4"></div>
+                    
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4 text-[10px] md:text-xs font-mono leading-tight">
+                      <div><p className="opacity-60 mb-0.5">STATUS</p><p className="font-bold">ATIVO</p></div>
+                      <div><p className="opacity-60 mb-0.5">NÍVEL</p><p className="font-bold">{memberData.level.toUpperCase()}</p></div>
+                      <div><p className="opacity-60 mb-0.5">VALIDADE</p><p className="font-bold">{validityDate}</p></div>
+                      <div><p className="opacity-60 mb-0.5">REGISTRO</p><p className="font-bold">{profile?.member_id?.slice(-8) || '---'}</p></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 mix-blend-overlay pointer-events-none" />
-          </motion.div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 mix-blend-overlay pointer-events-none" />
+            </motion.div>
+          )}
         </div>
 
         {/* Membership Performance Section */}
