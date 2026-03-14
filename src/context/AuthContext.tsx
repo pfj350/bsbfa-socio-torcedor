@@ -38,6 +38,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
+      // 1. Tenta carregar do cache para ser instantâneo
+      const cached = localStorage.getItem(`profile_${userId}`);
+      if (cached) {
+        setProfile(JSON.parse(cached));
+        setIsLoading(false); // Libera a tela se já tiver cache
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -45,10 +52,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
       
       if (error) throw error;
+      
       setProfile(data as UserProfile);
+      // 2. Atualiza o cache
+      localStorage.setItem(`profile_${userId}`, JSON.stringify(data));
     } catch (err) {
       console.error('Erro ao buscar perfil:', err);
-      // Wait for the trigger to create profile in case of new signup
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,40 +79,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          // Busca o perfil em paralelo
+          fetchProfile(session.user.id);
+        } else {
+          setIsLoading(false);
         }
       } catch (err) {
         console.error('Erro ao inicializar autenticação:', err);
-      } finally {
         setIsLoading(false);
       }
     };
 
     initAuth();
 
-    // Escuta mudanças (login, logout)
-    console.log('Setting up Supabase auth listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        console.log('Auth state change detected:', _event, !!session);
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchProfile(session.user.id);
         } else {
           setProfile(null);
+          localStorage.removeItem('profile_'); // Limpa cache no logout
           setIsLoading(false);
         }
       }
     );
 
-    // Safety timeout: se em 4 segundos não carregar, libera a tela
+    // Safety timeout reduzido para 2s (mais agressivo)
     const timeout = setTimeout(() => {
-      if (isLoading) {
-        console.warn('Auth timeout reached - forcing isLoading to false');
-        setIsLoading(false);
-      }
-    }, 4000);
+      setIsLoading(false);
+    }, 2000);
 
     return () => {
       subscription.unsubscribe();
