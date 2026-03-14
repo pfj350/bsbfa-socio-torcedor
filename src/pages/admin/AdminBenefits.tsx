@@ -1,6 +1,7 @@
+import { motion, Reorder } from 'motion/react';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trophy, Plus, Pencil, Trash2, X, Link as LinkIcon, Star, Heart, Zap, Tag, Gift, Coffee, Settings, Upload } from 'lucide-react';
+import { Trophy, Plus, Pencil, Trash2, X, Upload, Link as LinkIcon, GripVertical, Check, ListOrdered, Star, Heart, Zap, Tag, Gift, Coffee } from 'lucide-react';
 
 interface Benefit {
   id: string;
@@ -11,6 +12,7 @@ interface Benefit {
   action_link: string | null;
   is_banner?: boolean;
   image_url?: string | null;
+  priority?: number;
 }
 
 const PRESET_ICONS = [
@@ -26,6 +28,8 @@ const PRESET_ICONS = [
 export default function AdminBenefits() {
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReordering, setIsReordering] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -36,7 +40,8 @@ export default function AdminBenefits() {
     category: 'VIP',
     action_link: '',
     is_banner: false,
-    image_url: ''
+    image_url: '',
+    priority: '0'
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -46,6 +51,7 @@ export default function AdminBenefits() {
     const { data, error } = await supabase
       .from('benefits')
       .select('*')
+      .order('priority', { ascending: false })
       .order('created_at', { ascending: false });
       
     if (!error && data) {
@@ -57,6 +63,37 @@ export default function AdminBenefits() {
   useEffect(() => {
     fetchBenefits();
   }, []);
+
+  const handleReorder = async (newOrder: Benefit[]) => {
+    setBenefits(newOrder);
+  };
+
+  const saveOrder = async () => {
+    setIsSavingOrder(true);
+    try {
+      // Create updates for all items based on their new position
+      const updates = benefits.map((item, index) => ({
+        id: item.id,
+        priority: benefits.length - index
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('benefits')
+          .update({ priority: update.priority })
+          .eq('id', update.id);
+        
+        if (error) throw error;
+      }
+      
+      setIsReordering(false);
+    } catch (error) {
+      console.error('Erro ao salvar ordem:', error);
+      alert('Falha ao salvar a nova ordem. Tente novamente.');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +107,8 @@ export default function AdminBenefits() {
       category: formData.category,
       action_link: formData.action_link,
       is_banner: formData.is_banner,
-      image_url: formData.image_url
+      image_url: formData.image_url,
+      priority: parseInt(formData.priority.toString()) || 0
     };
 
     let error;
@@ -101,7 +139,8 @@ export default function AdminBenefits() {
       category: benefit.category || 'VIP',
       action_link: benefit.action_link || '',
       is_banner: Boolean(benefit.is_banner),
-      image_url: benefit.image_url || ''
+      image_url: benefit.image_url || '',
+      priority: (benefit.priority || 0).toString()
     });
     setIsModalOpen(true);
   };
@@ -142,7 +181,7 @@ export default function AdminBenefits() {
   };
 
   const openNewModal = () => {
-    setFormData({ id: '', title: '', description: '', icon: 'Trophy', category: 'VIP', action_link: '', is_banner: false, image_url: '' });
+    setFormData({ id: '', title: '', description: '', icon: 'Trophy', category: 'VIP', action_link: '', is_banner: false, image_url: '', priority: '0' });
     setIsModalOpen(true);
   };
 
@@ -153,43 +192,83 @@ export default function AdminBenefits() {
           <h2 className="text-2xl font-bold">Gerenciar Benefícios</h2>
           <p className="text-gray-400">Adicione ou edite os benefícios oferecidos aos sócios.</p>
         </div>
-        <button 
-          onClick={openNewModal}
-          className="bg-neon-green text-dark-bg px-4 py-2 font-bold rounded-lg flex items-center gap-2 hover:bg-neon-green-hover transition-colors"
-        >
-          <Plus size={20} />
-          Novo Benefício
-        </button>
+        <div className="flex gap-2">
+          {benefits.length > 1 && (
+            <button 
+              onClick={isReordering ? saveOrder : () => setIsReordering(true)}
+              disabled={isSavingOrder}
+              className={`px-4 py-2 font-bold rounded-lg flex items-center gap-2 transition-all ${
+                isReordering 
+                  ? 'bg-neon-green text-dark-bg hover:bg-neon-green-hover' 
+                  : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
+              }`}
+            >
+              {isSavingOrder ? (
+                <div className="w-5 h-5 border-2 border-dark-bg border-t-transparent rounded-full animate-spin"></div>
+              ) : isReordering ? (
+                <>
+                  <Check size={20} />
+                  Salvar Ordem
+                </>
+              ) : (
+                <>
+                  <ListOrdered size={20} />
+                  Reordenar
+                </>
+              )}
+            </button>
+          )}
+          <button 
+            onClick={openNewModal}
+            className="bg-neon-green text-dark-bg px-4 py-2 font-bold rounded-lg flex items-center gap-2 hover:bg-neon-green-hover transition-colors"
+          >
+            <Plus size={20} />
+            Novo Benefício
+          </button>
+        </div>
       </div>
 
       <div className="bg-dark-surface/50 border border-white/5 rounded-2xl overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-gray-400">Carregando benefícios...</div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/5 text-sm uppercase text-gray-500">
-                <th className="p-4 font-bold">Título</th>
-                <th className="p-4 font-bold">Categoria</th>
-                <th className="p-4 font-bold">Link de Resgate</th>
-                <th className="p-4 font-bold text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
+          <div className="w-full">
+            <div className="flex border-b border-white/5 text-sm uppercase text-gray-500 font-bold">
+              {isReordering && <div className="p-4 w-12 shrink-0"></div>}
+              <div className="p-4 flex-1">Título</div>
+              <div className="p-4 w-40">Categoria</div>
+              <div className="p-4 w-40">Link de Resgate</div>
+              <div className="p-4 w-32 text-right">Ações</div>
+            </div>
+            
+            <Reorder.Group 
+              axis="y" 
+              values={benefits} 
+              onReorder={handleReorder}
+              className="divide-y divide-white/5"
+            >
               {benefits.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center text-gray-500">
-                    Nenhum benefício cadastrado.
-                  </td>
-                </tr>
+                <div className="p-8 text-center text-gray-500">
+                  Nenhum benefício cadastrado.
+                </div>
               )}
               {benefits.map((benefit) => (
-                <tr key={benefit.id} className="hover:bg-white/5 transition-colors">
-                  <td className="p-4">
-                    <div className="font-bold text-white">{benefit.title}</div>
-                    <div className="text-sm text-gray-400 truncate max-w-xs">{benefit.description}</div>
-                  </td>
-                  <td className="p-4">
+                <Reorder.Item 
+                  key={benefit.id} 
+                  value={benefit}
+                  dragListener={isReordering}
+                  className={`flex items-center hover:bg-white/5 transition-colors bg-dark-surface/50 ${isReordering ? 'cursor-grab active:cursor-grabbing border-l-2 border-transparent active:border-neon-green' : ''}`}
+                >
+                  {isReordering && (
+                    <div className="p-4 w-12 shrink-0 text-gray-600 flex justify-center">
+                      <GripVertical size={20} />
+                    </div>
+                  )}
+                  <div className="p-4 flex-1 min-w-0">
+                    <div className="font-bold text-white truncate">{benefit.title}</div>
+                    <div className="text-sm text-gray-400 truncate">{benefit.description}</div>
+                  </div>
+                  <div className="p-4 w-40 shrink-0">
                     <span className="bg-white/10 px-3 py-1 rounded-full text-xs font-bold text-neon-green">
                       {benefit.category}
                     </span>
@@ -198,34 +277,38 @@ export default function AdminBenefits() {
                         Banner
                       </span>
                     )}
-                  </td>
-                  <td className="p-4 text-gray-400 text-sm">
+                  </div>
+                  <div className="p-4 w-40 shrink-0 text-gray-400 text-sm truncate">
                     {benefit.action_link ? (
                       <div className="flex items-center gap-1">
                         <LinkIcon size={14} /> Link Cadastrado
                       </div>
                     ) : '-'}
-                  </td>
-                  <td className="p-4 text-right">
+                  </div>
+                  <div className="p-4 w-32 shrink-0 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => handleEdit(benefit)}
-                        className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(benefit.id)}
-                        className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {!isReordering && (
+                        <>
+                          <button 
+                            onClick={() => handleEdit(benefit)}
+                            className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(benefit.id)}
+                            className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </>
+                      )}
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                </Reorder.Item>
               ))}
-            </tbody>
-          </table>
+            </Reorder.Group>
+          </div>
         )}
       </div>
 
@@ -250,6 +333,18 @@ export default function AdminBenefits() {
                   className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-300">Prioridade de Exibição (Início)</label>
+                <input 
+                  type="number" 
+                  value={formData.priority}
+                  onChange={e => setFormData({...formData, priority: e.target.value})}
+                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
+                  placeholder="0 (Maior número aparece primeiro)"
+                />
+                <p className="text-[10px] text-gray-500 uppercase font-black">Quanto maior o número, mais pro topo o item fica.</p>
               </div>
               
               <div className="space-y-4">

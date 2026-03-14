@@ -46,7 +46,7 @@ export default function Admin() {
 
       {/* Sidebar do Admin */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 w-64 border-r border-white/5 bg-dark-surface/50 backdrop-blur-xl flex flex-col z-[101]
+        fixed lg:relative inset-y-0 left-0 w-64 border-r border-white/5 bg-dark-surface/50 backdrop-blur-xl flex flex-col z-[30] lg:z-10
         transition-transform duration-300 ease-in-out lg:translate-x-0
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>

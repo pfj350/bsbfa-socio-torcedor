@@ -1,6 +1,7 @@
+import { motion, Reorder } from 'motion/react';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ShoppingBag, Plus, Pencil, Trash2, X, Upload } from 'lucide-react';
+import { ShoppingBag, Plus, Pencil, Trash2, X, Upload, GripVertical, Check, ListOrdered } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -9,11 +10,14 @@ interface Product {
   sale_price: number | null;
   image_url: string;
   checkout_url: string;
+  priority?: number;
 }
 
 export default function AdminStore() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReordering, setIsReordering] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   
@@ -23,7 +27,8 @@ export default function AdminStore() {
     regular_price: '',
     sale_price: '',
     image_url: '',
-    checkout_url: ''
+    checkout_url: '',
+    priority: '0'
   });
 
   const fetchProducts = async () => {
@@ -31,6 +36,7 @@ export default function AdminStore() {
     const { data, error } = await supabase
       .from('store_products')
       .select('*')
+      .order('priority', { ascending: false })
       .order('created_at', { ascending: false });
       
     if (!error && data) {
@@ -42,6 +48,34 @@ export default function AdminStore() {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  const handleReorder = async (newOrder: Product[]) => {
+    setProducts(newOrder);
+  };
+
+  const saveOrder = async () => {
+    setIsSavingOrder(true);
+    try {
+      const updates = products.map((item, index) => ({
+        id: item.id,
+        priority: products.length - index
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from('store_products')
+          .update({ priority: update.priority })
+          .eq('id', update.id);
+      }
+      
+      setIsReordering(false);
+    } catch (error) {
+      console.error('Erro ao salvar ordem:', error);
+      alert('Falha ao salvar a nova ordem.');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,7 +124,8 @@ export default function AdminStore() {
       regular_price: regular,
       sale_price: sale,
       image_url: formData.image_url,
-      checkout_url: formData.checkout_url
+      checkout_url: formData.checkout_url,
+      priority: parseInt(formData.priority.toString()) || 0
     };
 
     if (isEditing) {
@@ -110,7 +145,8 @@ export default function AdminStore() {
       regular_price: product.regular_price.toString(),
       sale_price: product.sale_price ? product.sale_price.toString() : '',
       image_url: product.image_url,
-      checkout_url: product.checkout_url
+      checkout_url: product.checkout_url,
+      priority: (product.priority || 0).toString()
     });
     setIsModalOpen(true);
   };
@@ -123,7 +159,7 @@ export default function AdminStore() {
   };
 
   const openNewModal = () => {
-    setFormData({ id: '', name: '', regular_price: '', sale_price: '', image_url: '', checkout_url: '' });
+    setFormData({ id: '', name: '', regular_price: '', sale_price: '', image_url: '', checkout_url: '', priority: '0' });
     setIsModalOpen(true);
   };
 
@@ -131,78 +167,126 @@ export default function AdminStore() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Gerenciar Loja Exclusiva</h2>
-          <p className="text-gray-400">Produtos, preços e links de venda.</p>
+          <h2 className="text-2xl font-bold">Gerenciar Loja</h2>
+          <p className="text-gray-400">Adicione ou remova produtos da loja oficial.</p>
         </div>
-        <button 
-          onClick={openNewModal}
-          className="bg-neon-green text-dark-bg px-4 py-2 font-bold rounded-lg flex items-center gap-2 hover:bg-neon-green-hover transition-colors"
-        >
-          <Plus size={20} />
-          Novo Produto
-        </button>
+        <div className="flex gap-2">
+          {products.length > 1 && (
+            <button 
+              onClick={isReordering ? saveOrder : () => setIsReordering(true)}
+              disabled={isSavingOrder}
+              className={`px-4 py-2 font-bold rounded-lg flex items-center gap-2 transition-all ${
+                isReordering 
+                  ? 'bg-neon-green text-dark-bg hover:bg-neon-green-hover' 
+                  : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
+              }`}
+            >
+              {isSavingOrder ? (
+                <div className="w-5 h-5 border-2 border-dark-bg border-t-transparent rounded-full animate-spin"></div>
+              ) : isReordering ? (
+                <>
+                  <Check size={20} />
+                  Salvar Ordem
+                </>
+              ) : (
+                <>
+                  <ListOrdered size={20} />
+                  Reordenar
+                </>
+              )}
+            </button>
+          )}
+          <button 
+            onClick={openNewModal}
+            className="bg-neon-green text-dark-bg px-4 py-2 font-bold rounded-lg flex items-center gap-2 hover:bg-neon-green-hover transition-colors"
+          >
+            <Plus size={20} />
+            Novo Produto
+          </button>
+        </div>
       </div>
 
       <div className="bg-dark-surface/50 border border-white/5 rounded-2xl overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-gray-400">Carregando produtos...</div>
         ) : (
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/5 text-sm uppercase text-gray-500">
-                <th className="p-4 font-bold w-24">Imagem</th>
-                <th className="p-4 font-bold">Produto</th>
-                <th className="p-4 font-bold">Preço Regular</th>
-                <th className="p-4 font-bold">Oferta</th>
-                <th className="p-4 font-bold text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
+          <div className="w-full">
+            <div className="flex border-b border-white/5 text-sm uppercase text-gray-500 font-bold">
+              {isReordering && <div className="p-4 w-12 shrink-0"></div>}
+              <div className="p-4 w-20">Foto</div>
+              <div className="p-4 flex-1">Produto</div>
+              <div className="p-4 w-40">Preço</div>
+              <div className="p-4 w-32 text-right">Ações</div>
+            </div>
+
+            <Reorder.Group 
+              axis="y" 
+              values={products} 
+              onReorder={handleReorder}
+              className="divide-y divide-white/5"
+            >
               {products.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
-                    Nenhum produto cadastrado.
-                  </td>
-                </tr>
+                <div className="p-8 text-center text-gray-500">
+                  Nenhum produto cadastrado.
+                </div>
               )}
               {products.map((product) => (
-                <tr key={product.id} className="hover:bg-white/5 transition-colors">
-                  <td className="p-4">
-                    <img src={product.image_url} alt={product.name} className="w-16 h-16 object-cover rounded-lg bg-dark-bg" />
-                  </td>
-                  <td className="p-4">
-                    <div className="font-bold text-white">{product.name}</div>
-                  </td>
-                  <td className="p-4">
-                    R$ {product.regular_price.toFixed(2).replace('.', ',')}
-                  </td>
-                  <td className="p-4">
-                    {product.sale_price ? (
-                      <span className="text-neon-green font-bold">
-                        R$ {product.sale_price.toFixed(2).replace('.', ',')}
-                      </span>
-                    ) : '-'}
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => handleEdit(product)}
-                        className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
-                      >
-                        <Pencil size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(product.id)}
-                        className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                <Reorder.Item 
+                  key={product.id} 
+                  value={product}
+                  dragListener={isReordering}
+                  className={`flex items-center hover:bg-white/5 transition-colors bg-dark-surface/50 ${isReordering ? 'cursor-grab active:cursor-grabbing border-l-2 border-transparent active:border-neon-green' : ''}`}
+                >
+                  {isReordering && (
+                    <div className="p-4 w-12 shrink-0 text-gray-600 flex justify-center">
+                      <GripVertical size={20} />
                     </div>
-                  </td>
-                </tr>
+                  )}
+                  <div className="p-4 w-20 shrink-0">
+                    <img 
+                      src={product.image_url} 
+                      alt={product.name} 
+                      className="w-12 h-12 object-cover rounded-lg border border-white/10" 
+                    />
+                  </div>
+                  <div className="p-4 flex-1 min-w-0">
+                    <div className="font-bold text-white truncate">{product.name}</div>
+                    <div className="text-sm text-gray-400 truncate max-w-xs">{product.checkout_url}</div>
+                  </div>
+                  <div className="p-4 w-40 shrink-0 font-mono text-sm">
+                    {product.sale_price ? (
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 line-through text-xs">R$ {product.regular_price.toFixed(2)}</span>
+                        <span className="text-neon-green font-bold text-lg">R$ {product.sale_price.toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <span className="text-white font-bold">R$ {product.regular_price.toFixed(2)}</span>
+                    )}
+                  </div>
+                  <div className="p-4 w-32 shrink-0 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       {!isReordering && (
+                        <>
+                          <button 
+                            onClick={() => handleEdit(product)}
+                            className="p-2 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(product.id)}
+                            className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </Reorder.Item>
               ))}
-            </tbody>
-          </table>
+            </Reorder.Group>
+          </div>
         )}
       </div>
 
@@ -246,7 +330,6 @@ export default function AdminStore() {
                   </div>
                 )}
               </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-bold text-gray-300">Nome do Produto</label>
                 <input 
@@ -255,6 +338,17 @@ export default function AdminStore() {
                   onChange={e => setFormData({...formData, name: e.target.value})}
                   className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-300">Prioridade de Exibição</label>
+                <input 
+                  type="number" 
+                  value={formData.priority}
+                  onChange={e => setFormData({...formData, priority: e.target.value})}
+                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
+                  placeholder="0 (Maior número aparece primeiro)"
                 />
               </div>
 

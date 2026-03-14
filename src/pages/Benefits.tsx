@@ -25,6 +25,7 @@ export default function Benefits() {
       const { data, error } = await supabase
         .from('benefits')
         .select('*')
+        .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
         
       if (!error && data) {
@@ -76,7 +77,7 @@ export default function Benefits() {
                   {benefit.image_url ? (
                     <img 
                       src={benefit.image_url} 
-                      alt="" 
+                      alt={benefit.title} 
                       className="absolute inset-0 w-full h-full object-cover opacity-30 transition-transform duration-700 group-hover:scale-105" 
                     />
                   ) : benefit.is_banner && (

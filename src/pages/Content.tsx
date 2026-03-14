@@ -26,6 +26,7 @@ export default function Content() {
       const { data, error } = await supabase
         .from('contents')
         .select('*')
+        .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
         
       if (!error && data) {
@@ -76,15 +77,11 @@ export default function Content() {
                   alt={video.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100 bg-dark-surface"
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-14 h-14 bg-black/40 backdrop-blur rounded-full flex items-center justify-center border border-white/20 group-hover:scale-110 group-hover:bg-neon-green/20 group-hover:border-neon-green/50 transition-all">
-                    {video.locked ? (
-                      <Lock className="text-gray-400" size={24} />
-                    ) : (
-                      <Play className="text-white ml-1 group-hover:text-neon-green transition-colors" size={24} fill="currentColor" />
-                    )}
+                {video.locked && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+                    <Lock className="text-white" size={32} />
                   </div>
-                </div>
+                )}
                 {/* Badge Data */}
                 {video.created_at && (
                   <div className={`absolute top-3 left-3 px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur-sm ${

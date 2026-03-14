@@ -55,6 +55,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from('contents')
         .select('*')
+        .order('priority', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(2);
       
@@ -236,7 +237,7 @@ export default function Dashboard() {
 
                 <div className="flex gap-3 md:gap-8 items-end flex-1 mt-2 md:mt-4">
                   <div className="w-20 h-28 md:w-32 md:h-[180px] bg-white border-[2px] md:border-[3px] border-[#0B3A1C]/30 rounded-lg md:rounded-xl overflow-hidden shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.1)] relative group-hover:border-neon-green/60 transition-colors duration-500">
-                    <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'User'}`} className="w-full h-full object-cover filter contrast-110" />
+                    <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'User'}`} alt={`Foto de ${profile?.full_name || 'perfil'}`} className="w-full h-full object-cover filter contrast-110" />
                   </div>
                   
                   <div className="flex-1 w-full relative pb-2 text-[#0B3A1C]">
@@ -454,7 +455,7 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 + (index * 0.1) }}
               className="group relative aspect-video rounded-2xl overflow-hidden cursor-pointer"
-              onClick={() => navigate(item.youtube_video_id ? `/content/${item.id}` : '#')}
+              onClick={() => navigate(`/content/${item.id}`)}
             >
               <img 
                 src={item.thumbnail_url || item.image} 
@@ -462,12 +463,6 @@ export default function Dashboard() {
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-dark-bg via-dark-bg/50 to-transparent opacity-90" />
-              
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-16 h-16 bg-neon-green/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-neon-green/50">
-                  <Play className="text-neon-green ml-1" fill="currentColor" size={32} />
-                </div>
-              </div>
 
               <div className="absolute bottom-0 left-0 p-6 w-full">
                 <div className="flex items-center gap-3 mb-2">

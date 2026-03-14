@@ -21,6 +21,7 @@ export default function Guides() {
       const { data, error } = await supabase
         .from('guides')
         .select('*')
+        .order('priority', { ascending: false })
         .order('created_at', { ascending: false });
         
       if (!error && data) {

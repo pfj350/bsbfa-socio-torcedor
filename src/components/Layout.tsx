@@ -64,7 +64,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
               <div className="p-6 flex items-center gap-4 bg-neon-green/5 border-b border-white/5">
                 <div className="w-12 h-12 rounded-xl border-2 border-neon-green/30 overflow-hidden">
-                  <img src={profile?.avatar_url || "/avatars/helmet-front.png"} alt="Avatar" className="w-full h-full object-cover" />
+                  <img src={profile?.avatar_url || "/avatars/helmet-front.png"} alt={`${profile?.full_name || 'Usuário'} avatar`} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 truncate">
                   <p className="text-sm font-black text-white truncate uppercase italic">{profile?.full_name}</p>
