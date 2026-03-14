@@ -17,13 +17,13 @@ export default function Dashboard() {
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
       <div className="relative p-6 md:p-8 h-full flex flex-col justify-between">
         <div className="flex justify-between items-start">
-          <div className="h-8 w-48 bg-white/10 rounded-lg"></div>
-          <div className="h-12 w-12 bg-white/10 rounded-full"></div>
+          <div className="h-6 w-32 bg-white/10 rounded-lg"></div>
+          <div className="h-10 w-10 bg-white/10 rounded-full"></div>
         </div>
-        <div className="flex gap-4 md:gap-8 items-end flex-1 mt-4">
-          <div className="w-24 h-32 md:w-32 md:h-[180px] bg-white/10 rounded-xl shrink-0"></div>
-          <div className="flex-1 space-y-4">
-            <div className="h-10 w-3/4 bg-white/10 rounded-lg"></div>
+        <div className="flex gap-3 md:gap-8 items-end flex-1 mt-2 md:mt-4">
+          <div className="w-20 h-28 md:w-32 md:h-[180px] bg-white/10 rounded-xl shrink-0"></div>
+          <div className="flex-1 space-y-3">
+            <div className="h-8 w-3/4 bg-white/10 rounded-lg"></div>
             <div className="h-2 w-16 bg-neon-green/30 rounded"></div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -44,6 +44,7 @@ export default function Dashboard() {
   const y = useMotionValue(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [editName, setEditName] = useState('');
   const [latestContents, setLatestContents] = useState<any[]>([]);
@@ -159,12 +160,16 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isHovered) {
-      const controlsX = animate(x, [0, 0.08, 0, -0.08, 0], { 
+      const isMobile = window.innerWidth < 768;
+      const rangeX = isMobile ? [0, 0.15, 0, -0.15, 0] : [0, 0.08, 0, -0.08, 0];
+      const rangeY = isMobile ? [0, -0.22, 0, 0.22, 0] : [0, -0.12, 0, 0.12, 0];
+
+      const controlsX = animate(x, rangeX, { 
         duration: 7, 
         repeat: Infinity,
         ease: "easeInOut"
       });
-      const controlsY = animate(y, [0, -0.12, 0, 0.12, 0], { 
+      const controlsY = animate(y, rangeY, { 
         duration: 5, 
         repeat: Infinity,
         ease: "easeInOut"
@@ -221,7 +226,7 @@ export default function Dashboard() {
               <div className="relative p-6 md:p-8 h-full flex flex-col justify-between" style={{ transform: "translateZ(30px)" }}>
                 <div className="flex justify-between items-start">
                    <div className="flex items-center gap-3">
-                     <h3 className="text-[#0B3A1C] font-black tracking-tighter italic uppercase text-2xl md:text-3xl drop-shadow-sm leading-none">Sócio Torcedor</h3>
+                     <h3 className="text-[#0B3A1C] font-black tracking-tighter italic uppercase text-lg md:text-3xl drop-shadow-sm leading-none">Sócio Torcedor</h3>
                    </div>
                    <div className="flex items-center gap-4">
                      <button onClick={() => setIsSettingsOpen(true)} className="p-2 md:p-3 bg-[#0B3A1C]/5 rounded-xl hover:bg-[#0B3A1C]/15 text-[#0B3A1C]/80 transition-colors shadow-sm"><Settings size={20} /></button>
@@ -229,18 +234,18 @@ export default function Dashboard() {
                    </div>
                 </div>
 
-                <div className="flex gap-4 md:gap-8 items-end flex-1 mt-4">
-                  <div className="w-24 h-32 md:w-32 md:h-[180px] bg-white border-[3px] border-[#0B3A1C]/30 rounded-lg md:rounded-xl overflow-hidden shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.1)] relative group-hover:border-neon-green/60 transition-colors duration-500">
+                <div className="flex gap-3 md:gap-8 items-end flex-1 mt-2 md:mt-4">
+                  <div className="w-20 h-28 md:w-32 md:h-[180px] bg-white border-[2px] md:border-[3px] border-[#0B3A1C]/30 rounded-lg md:rounded-xl overflow-hidden shrink-0 shadow-[0_10px_30px_rgba(0,0,0,0.1)] relative group-hover:border-neon-green/60 transition-colors duration-500">
                     <img src={profile?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.full_name || 'User'}`} className="w-full h-full object-cover filter contrast-110" />
                   </div>
                   
                   <div className="flex-1 w-full relative pb-2 text-[#0B3A1C]">
-                    <h2 className="text-2xl md:text-4xl font-black italic uppercase text-[#0B3A1C] tracking-tight mb-0 leading-none truncate max-w-[280px] md:max-w-md">
+                    <h2 className="text-xl md:text-4xl font-black italic uppercase text-[#0B3A1C] tracking-tight mb-0 leading-none truncate max-w-[180px] md:max-w-md">
                       {profile?.full_name}
                     </h2>
-                    <div className="h-1 w-16 bg-neon-green rounded mt-2 mb-4"></div>
+                    <div className="h-0.5 md:h-1 w-12 md:w-16 bg-neon-green rounded mt-1 md:mt-2 mb-2 md:mb-4"></div>
                     
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-4 text-[10px] md:text-xs font-mono leading-tight">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-2 md:gap-x-4 gap-y-2 md:gap-y-4 text-[8px] md:text-xs font-mono leading-tight">
                       <div><p className="opacity-60 mb-0.5">STATUS</p><p className="font-bold">ATIVO</p></div>
                       <div><p className="opacity-60 mb-0.5">NÍVEL</p><p className="font-bold">{memberData.level.toUpperCase()}</p></div>
                       <div><p className="opacity-60 mb-0.5">VALIDADE</p><p className="font-bold">{validityDate}</p></div>
@@ -269,15 +274,15 @@ export default function Dashboard() {
                   <div className="absolute inset-0 animate-[spin_10s_linear_infinite] opacity-30">
                     <div className="w-full h-full border-2 border-dashed border-neon-green rounded-full shadow-[0_0_15px_rgba(0,255,163,0.2)]" />
                   </div>
-                  <div className="w-[140px] h-[140px] md:w-40 md:h-40 bg-[#0B3A1C] p-0.5 rounded-[2.5rem] md:rounded-[2.8rem] transform rotate-3 relative shadow-2xl flex items-center justify-center">
-                    <div className="w-full h-full bg-[#050505] rounded-[2.4rem] md:rounded-[2.7rem] flex flex-col items-center justify-center border border-white/10">
-                      <div className="relative w-16 h-16 md:w-20 md:h-20 flex items-center justify-center">
+                  <div className="w-[110px] h-[110px] md:w-40 md:h-40 bg-[#0B3A1C] p-0.5 rounded-[2.2rem] md:rounded-[2.8rem] transform rotate-3 relative shadow-2xl flex items-center justify-center">
+                    <div className="w-full h-full bg-[#050505] rounded-[2.1rem] md:rounded-[2.7rem] flex flex-col items-center justify-center border border-white/10">
+                      <div className="relative w-12 h-12 md:w-20 md:h-20 flex items-center justify-center">
                         <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-neon-green drop-shadow-[0_0_8px_rgba(0,255,163,0.5)]">
                           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                           <path d="M8 13l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </div>
-                      <span className="text-[12px] md:text-[14px] font-black text-white/40 tracking-[0.2em] mt-0.5 md:mt-2 ml-1 uppercase">{memberData.level}</span>
+                      <span className="text-[10px] md:text-[14px] font-black text-white/40 tracking-[0.2em] mt-0.5 md:mt-2 ml-1 uppercase">{memberData.level}</span>
                     </div>
                   </div>
                 </div>
@@ -286,30 +291,35 @@ export default function Dashboard() {
               {/* Header Right: Reator & Dias Ativos */}
               <div className="col-start-2 col-span-1 row-start-1 flex justify-end w-full min-w-0">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full h-full gap-3 md:gap-0">
-                  <h5 className="text-[13px] md:text-sm font-black text-white uppercase tracking-[0.1em] md:tracking-[0.2em] flex items-center justify-end md:justify-start gap-2 md:gap-3 leading-tight w-full md:w-auto">
-                    <span className="md:hidden">Reator de Lealdade</span>
-                    <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-neon-green rounded-full animate-pulse shadow-[0_0_10px_#00ffa3] shrink-0" />
-                    <span className="hidden md:inline">Reator de Lealdade</span>
-                  </h5>
+                  <div className="flex items-center justify-end md:justify-start gap-2">
+                    <h5 className="text-[13px] md:text-sm font-black text-white uppercase tracking-[0.1em] md:tracking-[0.2em] flex items-center gap-2 md:gap-3 leading-tight">
+                      <span className="md:hidden">Reator de Lealdade</span>
+                      <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-neon-green rounded-full animate-pulse shadow-[0_0_10px_#00ffa3] shrink-0" />
+                      <span className="hidden md:inline">Reator de Lealdade</span>
+                    </h5>
+                    <button 
+                      onClick={() => setShowLevelInfo(true)}
+                      className="p-1 md:p-1.5 bg-white/5 hover:bg-white/15 rounded-lg text-white/30 hover:text-white transition-all border border-white/5"
+                    >
+                      <Info size={14} />
+                    </button>
+                  </div>
                   
                   <div className="flex flex-col items-end bg-white/5 border border-white/10 rounded-xl py-2 px-3 md:px-4 backdrop-blur-md relative overflow-hidden self-end">
                     <div className="absolute top-0 right-0 w-16 h-16 bg-neon-green/10 blur-xl rounded-full md:hidden" />
-                    <div className="relative z-10 flex flex-col items-end">
-                      <div className="flex items-baseline gap-1.5 leading-none">
-                        <span className="text-4xl md:text-3xl font-black text-white italic">
-                          {memberData.daysActive}
-                        </span>
-                        <span className="text-[11px] md:text-[10px] font-black text-neon-green md:text-white uppercase italic tracking-tighter">
-                          DIAS ATIVOS
-                        </span>
+                      <div className="relative z-10 flex flex-col items-end">
+                        <div className="flex items-baseline gap-1.5 leading-none">
+                          <span className="text-4xl md:text-3xl font-black text-white italic">
+                            {memberData.daysActive}
+                          </span>
+                          <span className="text-[11px] md:text-[10px] font-black text-neon-green uppercase italic tracking-tighter">
+                            DIAS ATIVOS
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-[8px] md:text-[8px] font-bold text-gray-400 md:text-neon-green uppercase tracking-[0.15em] md:tracking-[0.1em] mt-1 opacity-100 md:opacity-80 text-right">
-                        DE TORCEDOR DO BRASÍLIA
-                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
 
               {/* Progress Bar */}
               <div className="col-span-2 md:col-start-2 md:col-span-1 row-start-2 pt-10 md:pt-14 pb-6 md:pb-4 w-full min-w-0">
@@ -583,6 +593,84 @@ export default function Dashboard() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {showLevelInfo && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl"
+          >
+            <div className="p-6 space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-black text-white italic uppercase tracking-tight">Reator de Lealdade</h3>
+                <button onClick={() => setShowLevelInfo(false)} className="text-gray-400 hover:text-white transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[11px] text-gray-400 leading-tight">
+                  O Reator de Lealdade é o coração da sua jornada. Ele mede sua constância como sócio: quanto mais tempo você permanece ativo, maior o seu nível de prestígio.
+                </p>
+              </div>
+              
+              <div className="space-y-3">
+                {[
+                  { 
+                    level: 'Novato', 
+                    days: '0D', 
+                    desc: 'Onde tudo começa. Sua jornada como torcedor oficial se inicia aqui.', 
+                    icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 13l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>, 
+                    color: 'text-white' 
+                  },
+                  { 
+                    level: 'Calouro', 
+                    days: '30D', 
+                    desc: 'Você já faz parte da família. Sua energia começa a alimentar o clube.', 
+                    icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 11l4-3 4 3M8 15l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>, 
+                    color: 'text-yellow-200' 
+                  },
+                  { 
+                    level: 'Veterano', 
+                    days: '120D', 
+                    desc: 'Um torcedor de respeito. Sua presença é peça fundamental no dia a dia.', 
+                    icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 7l1.3 3.9h4.1l-3.3 2.4 1.3 3.9-3.4-2.5-3.4 2.5 1.3-3.9-3.3-2.4h4.1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, 
+                    color: 'text-yellow-400' 
+                  },
+                  { 
+                    level: 'Fanático', 
+                    days: '365D', 
+                    desc: 'Lealdade inabalável. O Brasília corre nas suas veias 24 horas por dia.', 
+                    icon: <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.5 16h9l1-6-3 2-2.5-4-2.5 4-3-2 1 6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, 
+                    color: 'text-[#22c55e]' 
+                  },
+                ].map((m) => (
+                  <div key={m.level} className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 transition-colors hover:bg-white/10">
+                    <div className={`w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center ${m.color}`}>
+                      {m.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-baseline">
+                        <span className={`font-bold uppercase text-[10px] tracking-wider ${m.color}`}>{m.level}</span>
+                        <span className="text-[9px] text-gray-600 font-mono font-bold">{m.days}</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 leading-tight mt-1">{m.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => setShowLevelInfo(false)}
+                className="w-full bg-white/5 hover:bg-white/15 text-white font-bold py-3 rounded-xl transition-all border border-white/5"
+              >
+                Entendi
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

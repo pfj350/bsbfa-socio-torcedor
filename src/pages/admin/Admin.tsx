@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Users, ShoppingBag, Trophy, BookOpen, PlayCircle, Settings, LogOut } from 'lucide-react';
+import { Users, ShoppingBag, Trophy, BookOpen, PlayCircle, Settings, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 
@@ -26,19 +26,43 @@ const ADMIN_NAV = [
 export default function Admin() {
   const location = useLocation();
   const { logout } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  // Close sidebar on route change
+  React.useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
 
 
   return (
     <div className="flex h-screen bg-dark-bg text-white font-sans overflow-hidden">
+      {/* Overlay for mobile sidebar */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar do Admin */}
-      <aside className="w-64 border-r border-white/5 bg-dark-surface/50 backdrop-blur-xl flex flex-col">
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 w-64 border-r border-white/5 bg-dark-surface/50 backdrop-blur-xl flex flex-col z-[101]
+        transition-transform duration-300 ease-in-out lg:translate-x-0
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         <div className="p-6 flex items-center justify-between border-b border-white/5">
           <Link to="/" className="text-xl font-bold italic tracking-wider text-neon-green">
             BFA<span className="text-white">.ADMIN</span>
           </Link>
+          <button 
+            className="lg:hidden p-1 text-gray-400 hover:text-white"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <X size={24} />
+          </button>
         </div>
         
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {ADMIN_NAV.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -73,8 +97,14 @@ export default function Admin() {
 
       {/* Conteúdo Principal do Admin */}
       <main className="flex-1 overflow-y-auto">
-        <header className="sticky top-0 z-20 bg-dark-bg/80 backdrop-blur-xl border-b border-white/5 p-4 flex items-center justify-between px-8">
-          <h1 className="text-2xl font-bold">Painel de Administração</h1>
+        <header className="sticky top-0 z-20 bg-dark-bg/80 backdrop-blur-xl border-b border-white/5 p-4 flex items-center gap-4 px-4 lg:px-8">
+          <button 
+            className="lg:hidden p-2 text-gray-400 hover:text-white bg-white/5 rounded-lg"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
+          <h1 className="text-xl lg:text-2xl font-bold truncate">Painel de Administração</h1>
         </header>
         
         <div className="p-8">
