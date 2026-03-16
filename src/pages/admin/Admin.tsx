@@ -36,6 +36,12 @@ export default function Admin() {
 
   return (
     <div className="flex h-screen bg-dark-bg text-white font-sans overflow-hidden">
+      <title>Painel Administrativo - Brasília FA</title>
+      <meta name="description" content="Gerencie produtos, benefícios, guias e conteúdos do programa Sócio Torcedor." />
+      <meta property="og:title" content="Painel Administrativo - Brasília FA" />
+      <meta property="og:description" content="Gestão do programa Sócio Torcedor." />
+      <meta property="og:type" content="website" />
+
       {/* Overlay for mobile sidebar */}
       {isSidebarOpen && (
         <div 

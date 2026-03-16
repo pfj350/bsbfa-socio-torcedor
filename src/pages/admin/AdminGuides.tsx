@@ -1,13 +1,12 @@
 import { motion, Reorder } from 'motion/react';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { BookOpen, Plus, Pencil, Trash2, X, Upload, ExternalLink, GripVertical, Check, ListOrdered } from 'lucide-react';
+import { BookOpen, Plus, Pencil, Trash2, X, Upload, ExternalLink, GripVertical, Check, ListOrdered, Bold, Italic, Heading1, Heading2, List, Link as LinkIcon } from 'lucide-react';
 
 interface Guide {
   id: string;
   title: string;
   description: string;
-  category: string;
   cover_image_url: string;
   file_url: string;
   priority: number;
@@ -21,12 +20,12 @@ export default function AdminGuides() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
   
   const [formData, setFormData] = useState({
     id: '',
     title: '',
     description: '',
-    category: 'Nutrição',
     cover_image_url: '',
     file_url: '',
     priority: '0'
@@ -135,26 +134,72 @@ export default function AdminGuides() {
     }
   };
 
+  const insertMarkdown = (tag: string, placeholder: string = '') => {
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = formData.description;
+    const selection = text.substring(start, end) || placeholder;
+    
+    let newText = '';
+    let cursorPosition = 0;
+
+    if (tag === 'bold') {
+      newText = text.substring(0, start) + `**${selection}**` + text.substring(end);
+      cursorPosition = start + 2 + selection.length + 2;
+    } else if (tag === 'italic') {
+      newText = text.substring(0, start) + `*${selection}*` + text.substring(end);
+      cursorPosition = start + 1 + selection.length + 1;
+    } else if (tag === 'h1') {
+      newText = text.substring(0, start) + `# ${selection}` + text.substring(end);
+      cursorPosition = start + 2 + selection.length;
+    } else if (tag === 'h2') {
+      newText = text.substring(0, start) + `## ${selection}` + text.substring(end);
+      cursorPosition = start + 3 + selection.length;
+    } else if (tag === 'list') {
+      newText = text.substring(0, start) + `- ${selection}` + text.substring(end);
+      cursorPosition = start + 2 + selection.length;
+    } else if (tag === 'link') {
+      newText = text.substring(0, start) + `[${selection}](url)` + text.substring(end);
+      cursorPosition = start + selection.length + 3;
+    }
+
+    setFormData({ ...formData, description: newText });
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    }, 0);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isEditing = !!formData.id;
-    const payload = {
-      title: formData.title,
-      description: formData.description,
-      category: formData.category,
-      cover_image_url: formData.cover_image_url,
-      file_url: formData.file_url,
-      priority: parseInt(formData.priority) || 0
-    };
+    try {
+      const isEditing = !!formData.id;
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        cover_image_url: formData.cover_image_url,
+        file_url: formData.file_url,
+        priority: parseInt(formData.priority) || 0
+      };
 
-    if (isEditing) {
-      await supabase.from('guides').update(payload).eq('id', formData.id);
-    } else {
-      await supabase.from('guides').insert([payload]);
+      if (isEditing) {
+        const { error } = await supabase.from('guides').update(payload).eq('id', formData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('guides').insert([payload]);
+        if (error) throw error;
+      }
+      
+      setIsModalOpen(false);
+      fetchGuides();
+    } catch (error: any) {
+      console.error('Erro ao salvar guia:', error);
+      alert('Erro ao salvar guia: ' + (error.message || 'Erro desconhecido'));
     }
-    
-    setIsModalOpen(false);
-    fetchGuides();
   };
 
   const handleEdit = (guide: Guide) => {
@@ -162,7 +207,6 @@ export default function AdminGuides() {
       id: guide.id,
       title: guide.title,
       description: guide.description,
-      category: guide.category || 'Nutrição',
       cover_image_url: guide.cover_image_url || '',
       file_url: guide.file_url || '',
       priority: (guide.priority || 0).toString()
@@ -178,12 +222,16 @@ export default function AdminGuides() {
   };
 
   const openNewModal = () => {
-    setFormData({ id: '', title: '', description: '', category: 'Nutrição', cover_image_url: '', file_url: '', priority: '0' });
+    setFormData({ id: '', title: '', description: '', cover_image_url: '', file_url: '', priority: '0' });
     setIsModalOpen(true);
   };
 
   return (
     <div className="space-y-6">
+      {/* SEO Metadata for Static Checkers */}
+      <title>Gerenciar Guias - Admin</title>
+      <meta name="description" content="Painel administrativo para gestão de guias e manuais em PDF." />
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gerenciar Guias</h2>
@@ -233,7 +281,6 @@ export default function AdminGuides() {
             <div className="flex border-b border-white/5 text-sm uppercase text-gray-500 font-bold">
               {isReordering && <div className="p-4 w-12 shrink-0"></div>}
               <div className="p-4 flex-1">Guia</div>
-              <div className="p-4 w-40 text-center">Categoria</div>
               <div className="p-4 w-32 text-right">Ações</div>
             </div>
 
@@ -263,11 +310,6 @@ export default function AdminGuides() {
                   <div className="p-4 flex-1 min-w-0">
                     <div className="font-bold text-white truncate">{guide.title}</div>
                     <div className="text-sm text-gray-400 truncate">{guide.description}</div>
-                  </div>
-                  <div className="p-4 w-40 shrink-0 text-center">
-                    <span className="bg-white/10 px-3 py-1 rounded-full text-xs font-bold text-neon-green uppercase">
-                      {guide.category}
-                    </span>
                   </div>
                   <div className="p-4 w-32 shrink-0 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -373,22 +415,34 @@ export default function AdminGuides() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-300">Categoria</label>
-                <input 
-                  type="text" 
-                  value={formData.category}
-                  onChange={e => setFormData({...formData, category: e.target.value})}
-                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-300">Descrição curta</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-bold text-gray-300">Descrição (Markdown)</label>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => insertMarkdown('bold', 'texto')} title="Negrito" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Bold size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('italic', 'texto')} title="Itálico" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Italic size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('h1', 'Título')} title="H1" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Heading1 size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('h2', 'Subtítulo')} title="H2" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Heading2 size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('list', 'item')} title="Lista" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <List size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('link', 'link')} title="Link" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <LinkIcon size={16} />
+                    </button>
+                  </div>
+                </div>
                 <textarea 
+                  ref={descriptionRef}
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
-                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none min-h-[80px]"
+                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none min-h-[120px] font-mono text-sm"
                   required
                 />
               </div>

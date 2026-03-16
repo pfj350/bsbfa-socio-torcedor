@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ChevronRight, File } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Guide {
   id: string;
@@ -80,9 +82,11 @@ export default function Guides() {
                 <h3 className="text-xl font-bold mb-2 group-hover:text-neon-green transition-colors leading-tight">
                   {guide.title}
                 </h3>
-                <p className="text-gray-400 text-sm mb-4 line-clamp-3 flex-grow">
-                  {guide.description}
-                </p>
+                <div className="text-gray-400 text-sm mb-4 line-clamp-3 flex-grow prose prose-invert prose-neon prose-sm max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {guide.description}
+                  </ReactMarkdown>
+                </div>
                 
                 <div className="flex items-center text-neon-green text-sm font-bold group-hover:translate-x-1 transition-transform mt-auto pt-2 border-t border-white/5">
                   ACESSAR GUIA <ChevronRight size={16} className="ml-1" />

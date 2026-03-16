@@ -28,15 +28,26 @@ function ProtectedRoute({ children, reqAdmin = false }: { children: React.ReactN
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center p-6 gap-4">
-        <div className="text-neon-green font-bold animate-pulse text-2xl tracking-widest">CARREGANDO...</div>
-        <div className="text-gray-500 text-sm">Verificando conexão com Supabase...</div>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 border border-white/10 rounded-lg text-xs hover:bg-white/5 transition-colors"
-        >
-          Recarregar Site
-        </button>
+      <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center p-6 gap-8 relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-neon-green/10 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-neon-green/5 rounded-full blur-[120px] animate-pulse delay-700" />
+        
+        <div className="relative z-10 flex flex-col items-center gap-6 text-center">
+          <div className="w-16 h-16 border-4 border-neon-green/20 border-t-neon-green rounded-full animate-spin shadow-[0_0_20px_rgba(34,197,94,0.2)]" />
+          <div className="space-y-2">
+            <h2 className="text-[clamp(1.5rem,4vw,2.5rem)] font-black italic uppercase tracking-tighter text-white">
+              Autenticando<span className="text-neon-green">...</span>
+            </h2>
+            <p className="text-gray-500 text-sm font-medium tracking-wide uppercase">Sincronizando com Supabase</p>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-neon-green hover:text-dark-bg transition-all duration-300 active:scale-95"
+          >
+            Sincronizar Manualmente
+          </button>
+        </div>
       </div>
     );
   }

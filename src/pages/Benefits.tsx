@@ -3,6 +3,8 @@ import { motion } from 'motion/react';
 import { ArrowUpRight, Trophy } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Benefit {
   id: string;
@@ -110,9 +112,11 @@ export default function Benefits() {
 
                 {/* Body Content Section (Below Header) */}
                 <div className="p-6 md:p-8 pt-2 md:pt-4 flex flex-col flex-grow relative">
-                  <p className={`text-gray-400 mb-8 flex-grow leading-relaxed ${benefit.is_banner ? 'text-base md:text-lg max-w-4xl' : 'text-sm'}`}>
-                    {benefit.description}
-                  </p>
+                  <div className={`text-gray-400 mb-8 flex-grow leading-relaxed prose prose-invert prose-neon max-w-none ${benefit.is_banner ? 'text-base md:text-lg max-w-4xl' : 'text-sm'}`}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {benefit.description}
+                    </ReactMarkdown>
+                  </div>
                   
                   <div className={`flex ${benefit.is_banner ? 'justify-start' : 'mt-auto'}`}>
                     <button 

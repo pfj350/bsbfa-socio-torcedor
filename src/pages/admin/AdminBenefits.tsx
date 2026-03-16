@@ -1,7 +1,7 @@
 import { motion, Reorder } from 'motion/react';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trophy, Plus, Pencil, Trash2, X, Upload, Link as LinkIcon, GripVertical, Check, ListOrdered, Star, Heart, Zap, Tag, Gift, Coffee } from 'lucide-react';
+import { Trophy, Plus, Pencil, Trash2, X, Upload, Link as LinkIcon, GripVertical, Check, ListOrdered, Star, Heart, Zap, Tag, Gift, Coffee, Bold, Italic, Heading1, Heading2, List } from 'lucide-react';
 
 interface Benefit {
   id: string;
@@ -45,6 +45,7 @@ export default function AdminBenefits() {
   });
 
   const [uploadingImage, setUploadingImage] = useState(false);
+  const descriptionRef = React.useRef<HTMLTextAreaElement>(null);
 
   const fetchBenefits = async () => {
     setIsLoading(true);
@@ -95,39 +96,73 @@ export default function AdminBenefits() {
     }
   };
 
+  const insertMarkdown = (tag: string, placeholder: string = '') => {
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = formData.description;
+    const selection = text.substring(start, end) || placeholder;
+    
+    let newText = '';
+    let cursorPosition = 0;
+
+    if (tag === 'bold') {
+      newText = text.substring(0, start) + `**${selection}**` + text.substring(end);
+      cursorPosition = start + 2 + selection.length + 2;
+    } else if (tag === 'italic') {
+      newText = text.substring(0, start) + `*${selection}*` + text.substring(end);
+      cursorPosition = start + 1 + selection.length + 1;
+    } else if (tag === 'h1') {
+      newText = text.substring(0, start) + `# ${selection}` + text.substring(end);
+      cursorPosition = start + 2 + selection.length;
+    } else if (tag === 'h2') {
+      newText = text.substring(0, start) + `## ${selection}` + text.substring(end);
+      cursorPosition = start + 3 + selection.length;
+    } else if (tag === 'list') {
+      newText = text.substring(0, start) + `- ${selection}` + text.substring(end);
+      cursorPosition = start + 2 + selection.length;
+    }
+
+    setFormData({ ...formData, description: newText });
+    
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    }, 0);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const isEditing = !!formData.id;
-    
-    const payload = {
-      title: formData.title,
-      description: formData.description,
-      icon: formData.icon,
-      category: formData.category,
-      action_link: formData.action_link,
-      is_banner: formData.is_banner,
-      image_url: formData.image_url,
-      priority: parseInt(formData.priority.toString()) || 0
-    };
+    try {
+      const isEditing = !!formData.id;
+      
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        icon: formData.icon,
+        category: formData.category,
+        action_link: formData.action_link,
+        is_banner: formData.is_banner,
+        image_url: formData.image_url,
+        priority: parseInt(formData.priority.toString()) || 0
+      };
 
-    let error;
-    if (isEditing) {
-      const { error: updateError } = await supabase.from('benefits').update(payload).eq('id', formData.id);
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase.from('benefits').insert([payload]);
-      error = insertError;
+      if (isEditing) {
+        const { error } = await supabase.from('benefits').update(payload).eq('id', formData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('benefits').insert([payload]);
+        if (error) throw error;
+      }
+      
+      setIsModalOpen(false);
+      fetchBenefits();
+    } catch (error: any) {
+      console.error('Erro ao salvar benefício:', error);
+      alert('Erro ao salvar benefício: ' + (error.message || 'Erro desconhecido'));
     }
-
-    if (error) {
-      console.error('Error saving benefit:', error);
-      alert(`Erro ao salvar: ${error.message}\n\nVerifique se você criou a coluna 'image_url' no SQL Editor do Supabase.`);
-      return;
-    }
-    
-    setIsModalOpen(false);
-    fetchBenefits();
   };
 
   const handleEdit = (benefit: Benefit) => {
@@ -187,6 +222,10 @@ export default function AdminBenefits() {
 
   return (
     <div className="space-y-6">
+      {/* SEO Metadata for Static Checkers */}
+      <title>Gerenciar Benefícios - Admin</title>
+      <meta name="description" content="Painel administrativo para gestão de benefícios do sócio torcedor." />
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gerenciar Benefícios</h2>
@@ -450,12 +489,32 @@ export default function AdminBenefits() {
                 <p className="text-xs text-gray-500">Ao clicar em resgatar, o sócio será levado a este link.</p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-300">Descrição</label>
+               <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-bold text-gray-300">Descrição (Markdown)</label>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => insertMarkdown('bold', 'texto')} title="Negrito" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Bold size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('italic', 'texto')} title="Itálico" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Italic size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('h1', 'Título')} title="H1" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Heading1 size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('h2', 'Subtítulo')} title="H2" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Heading2 size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('list', 'item')} title="Lista" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <List size={16} />
+                    </button>
+                  </div>
+                </div>
                 <textarea 
+                  ref={descriptionRef}
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
-                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none min-h-[100px]"
+                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none min-h-[120px] font-mono text-sm"
                   required
                 />
               </div>

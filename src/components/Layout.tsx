@@ -16,9 +16,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
-
   return (
     <div className="min-h-screen bg-dark-bg text-white flex flex-col md:flex-row">
+      <title>Brasília FA - Sócio Torcedor</title>
+      <meta name="description" content="Acesse benefícios exclusivos, conteúdos premium e gerencie sua assinatura do Sócio Torcedor Brasília FA." />
+      <meta property="og:title" content="Brasília FA - Sócio Torcedor" />
+      <meta property="og:description" content="Benefícios exclusivos, ingressos e conteúdos premium do maior time de futebol americano da capital." />
+      <meta property="og:image" content="/logo-socio.png" />
+      <meta property="og:type" content="website" />
+      
       {/* Mobile Header */}
       <header className="md:hidden sticky top-0 z-50 bg-dark-bg/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -186,9 +192,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
 
-      {/* Main Content */}
-      <main className="flex-1 pb-24 md:pb-8 overflow-x-hidden">
-        {children}
+      <main className="flex-1 pb-24 md:pb-8 overflow-x-hidden relative">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="w-full h-full"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {/* Mobile Bottom Nav */}

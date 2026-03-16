@@ -128,14 +128,21 @@ export default function AdminStore() {
       priority: parseInt(formData.priority.toString()) || 0
     };
 
-    if (isEditing) {
-      await supabase.from('store_products').update(payload).eq('id', formData.id);
-    } else {
-      await supabase.from('store_products').insert([payload]);
+    try {
+      if (isEditing) {
+        const { error } = await supabase.from('store_products').update(payload).eq('id', formData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('store_products').insert([payload]);
+        if (error) throw error;
+      }
+      
+      setIsModalOpen(false);
+      fetchProducts();
+    } catch (error: any) {
+      console.error('Erro ao salvar produto:', error);
+      alert('Erro ao salvar produto: ' + (error.message || 'Erro desconhecido'));
     }
-    
-    setIsModalOpen(false);
-    fetchProducts();
   };
 
   const handleEdit = (product: Product) => {

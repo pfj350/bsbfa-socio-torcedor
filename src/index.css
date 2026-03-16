@@ -37,8 +37,8 @@ body {
 }
 
 h1 { font-size: var(--text-fluid-h1); font-weight: 900; }
-h2 { font-size: var(--text-fluid-h2); font-weight: 800; }
-h3 { font-size: var(--text-fluid-h3); font-weight: 700; }
+h2 { font-size: var(--text-fluid-h2); font-weight: 600; }
+h3 { font-size: var(--text-fluid-h3); font-weight: 500; }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
@@ -49,8 +49,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Glassmorphism & Depth Utilities */
 .glass {
-  background: hsla(240, 5%, 10%, 0.7);
-  backdrop-filter: blur(12px);
+  background: hsla(240, 5%, 10%, 0.4);
+  backdrop-filter: blur(16px);
   border: 1px solid hsla(0, 0%, 100%, 0.1);
 }
 

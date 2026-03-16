@@ -9,7 +9,6 @@ interface Content {
   description: string;
   thumbnail_url: string;
   youtube_video_id: string;
-  category: string;
   priority?: number;
 }
 
@@ -28,7 +27,7 @@ export default function AdminContent() {
     description: '',
     thumbnail_url: '',
     youtube_url: '',
-    category: '',
+    video_position: 'top',
     priority: '0'
   });
 
@@ -106,45 +105,113 @@ export default function AdminContent() {
     }
   };
 
+  const insertMarkdown = (tag: string, placeholder: string = '') => {
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = formData.description;
+    const selection = text.substring(start, end) || placeholder;
+    
+    let newText = '';
+    let cursorPosition = 0;
+
+    if (tag === 'bold') {
+      newText = text.substring(0, start) + `**${selection}**` + text.substring(end);
+      cursorPosition = start + 2 + selection.length + 2;
+    } else if (tag === 'italic') {
+      newText = text.substring(0, start) + `*${selection}*` + text.substring(end);
+      cursorPosition = start + 1 + selection.length + 1;
+    } else if (tag === 'h1') {
+      newText = text.substring(0, start) + `# ${selection}` + text.substring(end);
+      cursorPosition = start + 2 + selection.length;
+    } else if (tag === 'h2') {
+      newText = text.substring(0, start) + `## ${selection}` + text.substring(end);
+      cursorPosition = start + 3 + selection.length;
+    } else if (tag === 'list') {
+      newText = text.substring(0, start) + `- ${selection}` + text.substring(end);
+      cursorPosition = start + 2 + selection.length;
+    } else if (tag === 'link') {
+      newText = text.substring(0, start) + `[${selection}](url)` + text.substring(end);
+      cursorPosition = start + selection.length + 3; // Position inside the (url)
+    }
+
+    setFormData({ ...formData, description: newText });
+    
+    // Focus back and set cursor
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    }, 0);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isEditing = !!formData.id;
-    
-    // Extract YouTube ID
-    let finalVideoId = formData.youtube_url;
-    if (finalVideoId.includes('v=')) {
-      finalVideoId = finalVideoId.split('v=')[1].split('&')[0];
-    } else if (finalVideoId.includes('youtu.be/')) {
-      finalVideoId = finalVideoId.split('youtu.be/')[1].split('?')[0];
-    }
+    try {
+      const isEditing = !!formData.id;
+      
+      // Extract YouTube ID and handle optional URL
+      let finalVideoId = '';
+      if (formData.youtube_url) {
+        let extractedId = formData.youtube_url;
+        if (extractedId.includes('v=')) {
+          extractedId = extractedId.split('v=')[1].split('&')[0];
+        } else if (extractedId.includes('youtu.be/')) {
+          extractedId = extractedId.split('youtu.be/')[1].split('?')[0];
+        }
+        
+        // Prepend position
+        finalVideoId = `${formData.video_position}:${extractedId}`;
+      }
 
-    const payload = {
-      title: formData.title,
-      description: formData.description,
-      thumbnail_url: formData.thumbnail_url,
-      youtube_video_id: finalVideoId,
-      category: formData.category,
-      priority: parseInt(formData.priority) || 0
-    };
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        thumbnail_url: formData.thumbnail_url,
+        youtube_video_id: finalVideoId,
+        priority: parseInt(formData.priority) || 0
+      };
 
-    if (isEditing) {
-      await supabase.from('contents').update(payload).eq('id', formData.id);
-    } else {
-      await supabase.from('contents').insert([payload]);
+      if (isEditing) {
+        const { error } = await supabase.from('contents').update(payload).eq('id', formData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('contents').insert([payload]);
+        if (error) throw error;
+      }
+      
+      setIsModalOpen(false);
+      fetchContents();
+    } catch (error: any) {
+      console.error('Erro ao salvar conteúdo:', error);
+      alert('Erro ao salvar: ' + (error.message || 'Erro desconhecido'));
     }
-    
-    setIsModalOpen(false);
-    fetchContents();
   };
 
   const handleEdit = (content: Content) => {
+    let videoUrl = '';
+    let position = 'top';
+    
+    if (content.youtube_video_id) {
+      if (content.youtube_video_id.startsWith('bottom:')) {
+        position = 'bottom';
+        videoUrl = `https://youtube.com/watch?v=${content.youtube_video_id.replace('bottom:', '')}`;
+      } else if (content.youtube_video_id.startsWith('top:')) {
+        position = 'top';
+        videoUrl = `https://youtube.com/watch?v=${content.youtube_video_id.replace('top:', '')}`;
+      } else {
+        videoUrl = `https://youtube.com/watch?v=${content.youtube_video_id}`;
+      }
+    }
+
     setFormData({
       id: content.id,
       title: content.title,
       description: content.description,
       thumbnail_url: content.thumbnail_url || '',
-      youtube_url: content.youtube_video_id ? `https://youtube.com/watch?v=${content.youtube_video_id}` : '',
-      category: content.category || '',
+      youtube_url: videoUrl,
+      video_position: position,
       priority: (content.priority || 0).toString()
     });
     setIsModalOpen(true);
@@ -158,12 +225,16 @@ export default function AdminContent() {
   };
 
   const openNewModal = () => {
-    setFormData({ id: '', title: '', description: '', thumbnail_url: '', youtube_url: '', category: '', priority: '0' });
+    setFormData({ id: '', title: '', description: '', thumbnail_url: '', youtube_url: '', video_position: 'top', priority: '0' });
     setIsModalOpen(true);
   };
 
   return (
     <div className="space-y-6">
+      {/* SEO Metadata for Static Checkers */}
+      <title>Gerenciar Conteúdo - Admin</title>
+      <meta name="description" content="Painel administrativo para gestão de mídias e conteúdos exclusivos." />
+
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Gerenciar Conteúdos</h2>
@@ -213,7 +284,6 @@ export default function AdminContent() {
             <div className="flex border-b border-white/5 text-sm uppercase text-gray-500 font-bold">
               {isReordering && <div className="p-4 w-12 shrink-0"></div>}
               <div className="p-4 flex-1">Conteúdo</div>
-              <div className="p-4 w-40">Categoria</div>
               <div className="p-4 w-32 text-right">Ações</div>
             </div>
 
@@ -243,11 +313,6 @@ export default function AdminContent() {
                   <div className="p-4 flex-1 min-w-0">
                     <div className="font-bold text-white truncate">{item.title}</div>
                     <div className="text-sm text-gray-400 truncate max-w-xs">{item.description}</div>
-                  </div>
-                  <div className="p-4 w-40 shrink-0">
-                    <span className="bg-white/10 px-3 py-1 rounded-full text-xs font-bold text-neon-green uppercase">
-                      {item.category}
-                    </span>
                   </div>
                   <div className="p-4 w-32 shrink-0 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -298,16 +363,50 @@ export default function AdminContent() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-300">YouTube URL</label>
-                <input 
-                  type="url" 
-                  value={formData.youtube_url}
-                  onChange={e => setFormData({...formData, youtube_url: e.target.value})}
-                  placeholder="https://www.youtube.com/watch?v=..."
-                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
-                  required
-                />
+              <div className="space-y-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-bold text-gray-300">YouTube URL (Opcional)</label>
+                    <span className="text-[10px] text-gray-500 uppercase font-black">Deixe vazio se não houver vídeo</span>
+                  </div>
+                  <input 
+                    type="url" 
+                    value={formData.youtube_url}
+                    onChange={e => setFormData({...formData, youtube_url: e.target.value})}
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
+                  />
+                </div>
+
+                {formData.youtube_url && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-sm font-bold text-gray-300">Posição do Vídeo</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, video_position: 'top'})}
+                        className={`flex-1 py-2 rounded-xl font-bold text-xs transition-all border ${
+                          formData.video_position === 'top' 
+                            ? 'bg-neon-green text-dark-bg border-neon-green' 
+                            : 'bg-transparent text-gray-400 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        NO TOPO (Antes do texto)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, video_position: 'bottom'})}
+                        className={`flex-1 py-2 rounded-xl font-bold text-xs transition-all border ${
+                          formData.video_position === 'bottom' 
+                            ? 'bg-neon-green text-dark-bg border-neon-green' 
+                            : 'bg-transparent text-gray-400 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        NO FINAL (Depois do texto)
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -347,22 +446,34 @@ export default function AdminContent() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-300">Categoria</label>
-                <input 
-                  type="text" 
-                  value={formData.category}
-                  onChange={e => setFormData({...formData, category: e.target.value})}
-                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-300">Descrição</label>
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-bold text-gray-300">Descrição (Markdown)</label>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => insertMarkdown('bold', 'texto')} title="Negrito" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Bold size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('italic', 'texto')} title="Itálico" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Italic size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('h1', 'Título')} title="H1" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Heading1 size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('h2', 'Subtítulo')} title="H2" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <Heading2 size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('list', 'item')} title="Lista" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <List size={16} />
+                    </button>
+                    <button type="button" onClick={() => insertMarkdown('link', 'link')} title="Link" className="p-1.5 hover:bg-white/10 rounded transition-colors text-gray-400">
+                      <LinkIcon size={16} />
+                    </button>
+                  </div>
+                </div>
                 <textarea 
+                  ref={descriptionRef}
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
-                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none min-h-[100px]"
+                  className="w-full bg-dark-surface border border-white/10 rounded-xl p-3 focus:border-neon-green transition-colors outline-none min-h-[150px] font-mono text-sm"
                   required
                 />
               </div>
