@@ -193,18 +193,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
 
       <main className="flex-1 pb-24 md:pb-8 overflow-x-hidden relative">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="w-full h-full"
-          >
+        {location.pathname.startsWith('/admin') ? (
+          <div className="w-full h-full">
             {children}
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="w-full h-full"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        )}
       </main>
 
       {/* Mobile Bottom Nav */}
