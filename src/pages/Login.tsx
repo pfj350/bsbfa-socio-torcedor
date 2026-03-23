@@ -110,9 +110,9 @@ export default function Login() {
 
         <div className="mt-8 text-center">
           <p className="text-gray-500 text-sm">Quer saber como entrar?</p>
-          <Link to="/register" className="text-neon-green font-bold hover:underline mt-1 inline-block">
+          <a href="https://torcedor.brasiliafa.com.br/seja-torcedor/" target="_blank" rel="noopener noreferrer" className="text-neon-green font-bold hover:underline mt-1 inline-block">
             VEJA AGORA!
-          </Link>
+          </a>
         </div>
       </motion.div>
     </div>
