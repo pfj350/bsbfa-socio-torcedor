@@ -112,6 +112,76 @@ export default function Dashboard() {
     };
   }, [profile?.created_at]);
 
+  const milestones = useMemo(() => ([
+    { days: 0, label: 'NOVATO', pct: 0, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 13l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-white', glow: 'shadow-[0_0_10px_#ffffff]' },
+    { days: 30, label: 'CALOURO', pct: 15, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 11l4-3 4 3M8 15l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-yellow-200', glow: 'shadow-[0_0_10px_#fef08a]' },
+    { days: 120, label: 'VETERANO', pct: 50, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 7l1.3 3.9h4.1l-3.3 2.4 1.3 3.9-3.4-2.5-3.4 2.5 1.3-3.9-3.3-2.4h4.1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-yellow-400', glow: 'shadow-[0_0_10px_#facc15]' },
+    { days: 365, label: 'FANÁTICO', pct: 100, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.5 16h9l1-6-3 2-2.5-4-2.5 4-3-2 1 6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-[#22c55e]', glow: 'shadow-[0_0_10px_#22c55e]' }
+  ]), []);
+
+  const currentMilestone = useMemo(() => {
+    return [...milestones].reverse().find((m) => memberData.daysActive >= m.days) || milestones[0];
+  }, [memberData.daysActive, milestones]);
+
+  const nextMilestone = useMemo(() => {
+    return milestones.find((m) => m.days > memberData.daysActive) || null;
+  }, [memberData.daysActive, milestones]);
+
+  /** Mesma escala visual dos marcos (0% → 15% → 50% → 100%), não linear em dias corridos */
+  const loyaltyTrackPercent = useMemo(() => {
+    const d = Math.min(365, Math.max(0, memberData.daysActive));
+    if (d <= 30) return (d / 30) * 15;
+    if (d <= 120) return 15 + ((d - 30) / (120 - 30)) * (50 - 15);
+    return 50 + ((d - 120) / (365 - 120)) * (100 - 50);
+  }, [memberData.daysActive]);
+
+  const rankDotClass = useMemo(() => {
+    switch (memberData.level) {
+      case 'Calouro':
+        return 'bg-yellow-200 shadow-[0_0_8px_rgba(254,240,138,0.45)] ring-1 ring-yellow-200/35';
+      case 'Veterano':
+        return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.45)] ring-1 ring-yellow-400/35';
+      case 'Fanático':
+        return 'bg-[#22c55e] shadow-[0_0_8px_rgba(34,197,94,0.45)] ring-1 ring-[#22c55e]/35';
+      default:
+        return 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.35)] ring-1 ring-white/30';
+    }
+  }, [memberData.level]);
+
+  const renderRankIcon = (level: string) => {
+    const svgCls = 'w-full h-full block';
+    if (level === 'Fanático') {
+      return (
+        <svg className={svgCls} viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M7.5 16h9l1-6-3 2-2.5-4-2.5 4-3-2 1 6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    }
+    if (level === 'Veterano') {
+      return (
+        <svg className={svgCls} viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 7l1.3 3.9h4.1l-3.3 2.4 1.3 3.9-3.4-2.5-3.4 2.5 1.3-3.9-3.3-2.4h4.1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    }
+    if (level === 'Calouro') {
+      return (
+        <svg className={svgCls} viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M8 11l4-3 4 3M8 15l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      );
+    }
+    return (
+      <svg className={svgCls} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M8 13l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    );
+  };
+
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!profile) return;
@@ -277,11 +347,10 @@ export default function Dashboard() {
                   </div>
                   <div className="w-[110px] h-[110px] md:w-40 md:h-40 bg-[#0B3A1C] p-0.5 rounded-[2.2rem] md:rounded-[2.8rem] transform rotate-3 relative shadow-2xl flex items-center justify-center">
                     <div className="w-full h-full bg-[#050505] rounded-[2.1rem] md:rounded-[2.7rem] flex flex-col items-center justify-center border border-white/10">
-                      <div className="relative w-12 h-12 md:w-20 md:h-20 flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-neon-green drop-shadow-[0_0_8px_rgba(0,255,163,0.5)]">
-                          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M8 13l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+                      <div className="relative w-[72px] h-[72px] md:w-[112px] md:h-[112px] flex items-center justify-center shrink-0">
+                        <div className={`w-full h-full flex items-center justify-center ${currentMilestone.color} drop-shadow-[0_0_12px_rgba(255,255,255,0.25)]`}>
+                          {renderRankIcon(memberData.level)}
+                        </div>
                       </div>
                       <span className="text-[10px] md:text-[14px] font-black text-white/40 tracking-[0.2em] mt-0.5 md:mt-2 ml-1 uppercase">{memberData.level}</span>
                     </div>
@@ -328,7 +397,7 @@ export default function Dashboard() {
                     <div className="absolute inset-0 rounded-full border border-white/5 overflow-hidden bg-[linear-gradient(90deg,rgba(255,255,255,0.15)_0%,rgba(254,240,138,0.15)_15%,rgba(250,204,21,0.15)_50%,rgba(34,197,94,0.15)_100%)] backdrop-blur-sm"></div>
                     <motion.div 
                       initial={{ width: 0 }}
-                      animate={{ width: `${memberData.progress}%` }}
+                      animate={{ width: `${loyaltyTrackPercent}%` }}
                       transition={{ duration: 2, ease: "anticipate" }}
                       className={`absolute inset-y-0.5 left-0.5 rounded-full relative overflow-hidden transition-colors duration-1000 ${
                         memberData.daysActive >= 365 ? 'bg-gradient-to-r from-green-500 to-[#15803d] shadow-[0_0_15px_#22c55e]' :
@@ -340,12 +409,7 @@ export default function Dashboard() {
                        <div className="absolute inset-0 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.4)_50%,transparent_100%)] w-20 animate-[scan_3s_linear_infinite] opacity-40" />
                     </motion.div>
 
-                    {[
-                      { days: 0, label: 'NOVATO', pct: 0, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 13l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-white', glow: 'shadow-[0_0_10px_#ffffff]' },
-                      { days: 30, label: 'CALOURO', pct: 15, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 11l4-3 4 3M8 15l4-3 4 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-yellow-200', glow: 'shadow-[0_0_10px_#fef08a]' },
-                      { days: 120, label: 'VETERANO', pct: 50, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 7l1.3 3.9h4.1l-3.3 2.4 1.3 3.9-3.4-2.5-3.4 2.5 1.3-3.9-3.3-2.4h4.1z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-yellow-400', glow: 'shadow-[0_0_10px_#facc15]' },
-                      { days: 365, label: 'FANÁTICO', pct: 100, icon: <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7.5 16h9l1-6-3 2-2.5-4-2.5 4-3-2 1 6z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>, color: 'text-[#22c55e]', glow: 'shadow-[0_0_10px_#22c55e]' }
-                    ].map((milestone) => {
+                    {milestones.map((milestone) => {
                       const isReached = memberData.daysActive >= milestone.days;
                       let positionClass = "-translate-x-1/2";
                       if (milestone.days === 0) positionClass = "translate-x-0";
@@ -372,7 +436,22 @@ export default function Dashboard() {
                         </div>
                       );
                     })}
+
+                    <div
+                      className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-20"
+                      style={{ left: `calc(4px + (100% - 8px) * ${loyaltyTrackPercent / 100})` }}
+                    >
+                      <div className={`w-2 h-2 rounded-full border border-dark-bg/80 ${rankDotClass}`} />
+                      <span className={`absolute top-3.5 left-1/2 -translate-x-1/2 text-[8px] font-black whitespace-nowrap ${currentMilestone.color}`}>
+                        {memberData.daysActive}D
+                      </span>
+                    </div>
                   </div>
+                  <p className="mt-4 text-[10px] text-gray-400 font-bold tracking-wide uppercase text-right">
+                    {nextMilestone
+                      ? `Faltam ${Math.max(nextMilestone.days - memberData.daysActive, 0)} dias para ${nextMilestone.label}`
+                      : 'Patente máxima alcançada'}
+                  </p>
                 </div>
             </div>
           </div>

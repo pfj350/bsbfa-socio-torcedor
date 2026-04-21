@@ -1,6 +1,7 @@
 node_modules/
 build/
 dist/
+vite.config.ts.timestamp-*.mjs
 coverage/
 .DS_Store
 *.log
